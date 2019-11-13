@@ -129,7 +129,7 @@ void main(){
 	if(is_light){
 		//vec3 result=CalcPointLight(point_light,normal,frag_pos,normalize(view_pos - frag_pos));
 		//frag_color=vec4(result,1.0f);
-		frag_color=texture(material.specular,tex_coord);
+		frag_color=texture(material.diffuse,tex_coord);
 	}
 	else{
 		vec3 norm = normalize(normal);

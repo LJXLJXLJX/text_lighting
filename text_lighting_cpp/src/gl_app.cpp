@@ -4,8 +4,14 @@
 
 using namespace std;
 
+
+
 GlApp::GlApp()
 {
+	m_tm = make_shared<TextMesh>();
+	m_qm = make_shared<QuadMesh>();
+	m_text_shader = make_shared<Shader>();
+	m_quad_shader = make_shared<Shader>();
 	initGlfw();
 }
 
@@ -53,43 +59,33 @@ int GlApp::setViewport(int width, int height)
 	return 0;
 }
 
-int GlApp::renderLoop(std::list<std::function<void()>>&func_list)
+int GlApp::renderLoop()
 {
 	while (!glfwWindowShouldClose(m_window)) {
-
-		glClear(GL_COLOR_BUFFER_BIT);
-
+		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+		glEnable(GL_DEPTH_TEST);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		m_tm->draw(m_text_shader);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		if (!func_list.empty()) {
-			for (auto func : func_list)
-				func();
-		}
-
+		glEnable(GL_DEPTH_TEST);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		m_qm->draw(m_quad_shader);
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();
 	}
 	return 0;
 }
 
-void GlApp::setShader(Shader * shader)
-{
-	m_shader = shader;
-}
-
-void GlApp::setTextMesh(TextMesh * tm)
-{
-	m_tm = tm;
-}
 
 void GlApp::generateFrameBuffer()
 {
 	glGenFramebuffers(1, &m_framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
 	// 生成纹理
-	unsigned int tex_color_buffer;
-	glGenTextures(1, &tex_color_buffer);
-	glBindTexture(GL_TEXTURE_2D, tex_color_buffer);
+	glGenTextures(1, &m_texture_colorbuffer);
+	glBindTexture(GL_TEXTURE_2D, m_texture_colorbuffer);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 280, 32, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -97,7 +93,7 @@ void GlApp::generateFrameBuffer()
 
 	//附加到当前绑定的帧缓冲对象
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-		GL_TEXTURE_2D, tex_color_buffer, 0);
+		GL_TEXTURE_2D, m_texture_colorbuffer, 0);
 
 	//创建渲染缓冲对象
 	unsigned int rbo;
@@ -112,3 +108,5 @@ void GlApp::generateFrameBuffer()
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+
