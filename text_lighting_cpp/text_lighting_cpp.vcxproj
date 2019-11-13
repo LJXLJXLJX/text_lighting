@@ -142,6 +142,7 @@
     <ClInclude Include="src\quad_mesh.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\stb_image.h" />
+    <ClInclude Include="src\stb_image_write.h" />
     <ClInclude Include="src\texture.h" />
     <ClInclude Include="src\text_mesh.h" />
   </ItemGroup>

@@ -1,9 +1,11 @@
 #include "gl_app.h"
+#include "stb_image_write.h"
+#include "texture.h"
+#include "light.h"
 
 #include <iostream>
 
 using namespace std;
-
 
 
 GlApp::GlApp()
@@ -26,6 +28,7 @@ int GlApp::initGlfw()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 	return 0;
 }
 
@@ -59,19 +62,77 @@ int GlApp::setViewport(int width, int height)
 	return 0;
 }
 
-int GlApp::renderLoop()
+void GlApp::drawFbo()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
+	glEnable(GL_DEPTH_TEST);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	m_tm->draw(m_text_shader);
+}
+
+void GlApp::fboToFile(std::string path)
+{
+	GLubyte* pixels = (GLubyte*)malloc(280 * 32 * 3 * sizeof(GLubyte));
+	glReadPixels(0, 0, 280, 32, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+	stbi_flip_vertically_on_write(true);
+	stbi_write_jpg(path.c_str(), 280, 32, 3, pixels, 100);
+}
+
+void GlApp::drawQuad()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_DEPTH_TEST);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	m_qm->draw(m_quad_shader);
+}
+
+// äÖÈ¾Ò»´Î
+void GlApp::renderOnce(std::string img_path)
+{
+	int height, width;
+	unsigned int texture_id = textureFromFile(img_path.c_str(), height, width);
+
+	setViewport(width, height);
+	m_tm->setTexture(m_text_shader, texture_id);
+
+	m_text_shader->setInt("material.diffuse", texture_id);
+	m_text_shader->setInt("material.specular", texture_id);
+	m_text_shader->setFloat("material.shininess", 32.0f);
+
+	PointLight pl;
+	pl.position = { 0.0f,0.0f,1.0f };
+	pl.ambient = { 0.2f, 0.2f, 0.2f };
+	pl.diffuse = { 0.8f, 0.5f, 0.5f };
+	pl.specular = { 1.0f, 0.1f, 0.1f };
+	pl._near = 0.5f;
+	pl._far = 10.0f;
+
+	m_text_shader->setVec3("point_light.position", pl.position);
+	m_text_shader->setVec3("point_light.ambient", pl.ambient);
+	m_text_shader->setVec3("point_light.diffuse", pl.diffuse);
+	m_text_shader->setVec3("point_light.specular", pl.specular);
+	m_text_shader->setFloat("point_light.near", pl._near);
+	m_text_shader->setFloat("point_light.far", pl._far);
+
+	m_text_shader->setVec3("obj_color", { 1.0f,0.0f,0.0f });
+	m_text_shader->setBool("is_light", false);
+	m_text_shader->setVec3("view_pos", { 0.0f,0.0f,1.0f });
+
+	m_qm->setTexture(m_quad_shader, m_texture_colorbuffer);
+	m_quad_shader->setInt("screen_texture", m_texture_colorbuffer);
+
+	drawFbo();
+	fboToFile("test.jpg");
+	glDeleteTextures(1, &texture_id);
+}
+
+int GlApp::DebugRenderLoop()
 {
 	while (!glfwWindowShouldClose(m_window)) {
-		glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer);
-		glEnable(GL_DEPTH_TEST);
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		m_tm->draw(m_text_shader);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glEnable(GL_DEPTH_TEST);
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		m_qm->draw(m_quad_shader);
+		drawQuad();
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();
 	}

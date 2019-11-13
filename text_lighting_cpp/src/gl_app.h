@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <list>
+#include <string>
 
 #include "text_mesh.h"
 #include "quad_mesh.h"
@@ -28,8 +29,16 @@ public:
 
 	int setViewport(int width, int height);
 
+	void drawFbo();
+
+	void fboToFile(std::string path);
+
+	void drawQuad();
+
+	void renderOnce(std::string img_path);
+
 	//For debugging
-	int renderLoop();
+	int DebugRenderLoop();
 
 	void generateFrameBuffer();
 

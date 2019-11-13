@@ -17,6 +17,7 @@ static unsigned int tm_indices[] = {
 	   1, 2, 3  // second triangle
 };
 
+
 class TextMesh : public Mesh {
 public:
 	void init() {
