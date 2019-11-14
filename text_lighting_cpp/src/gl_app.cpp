@@ -4,8 +4,11 @@
 #include "light.h"
 
 #include <iostream>
+#include <random>
+#include <filesystem>
 
 using namespace std;
+namespace fs = std::filesystem;
 
 
 GlApp::GlApp()
@@ -56,6 +59,13 @@ int GlApp::initGlad()
 	return 0;
 }
 
+void GlApp::generateTexture(std::string img_path)
+{
+	int height, width;
+	m_texture_id = textureFromFile(img_path.c_str(), height, width);
+	setViewport(width, height);
+}
+
 int GlApp::setViewport(int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -90,23 +100,32 @@ void GlApp::drawQuad()
 }
 
 // äÖÈ¾Ò»´Î
-void GlApp::renderOnce(std::string img_path)
+void GlApp::renderOnce()
 {
-	int height, width;
-	unsigned int texture_id = textureFromFile(img_path.c_str(), height, width);
+	m_tm->setTexture(m_text_shader, m_texture_id);
 
-	setViewport(width, height);
-	m_tm->setTexture(m_text_shader, texture_id);
-
-	m_text_shader->setInt("material.diffuse", texture_id);
-	m_text_shader->setInt("material.specular", texture_id);
+	m_text_shader->setInt("material.diffuse", m_texture_id);
+	m_text_shader->setInt("material.specular", m_texture_id);
 	m_text_shader->setFloat("material.shininess", 32.0f);
 
 	PointLight pl;
-	pl.position = { 0.0f,0.0f,1.0f };
-	pl.ambient = { 0.2f, 0.2f, 0.2f };
-	pl.diffuse = { 0.8f, 0.5f, 0.5f };
-	pl.specular = { 1.0f, 0.1f, 0.1f };
+
+	random_device rd{};
+	uniform_real_distribution<float> dist(-2.0f, 2.0f);
+	float x = dist(rd);
+	float y = dist(rd);
+	dist = uniform_real_distribution<float>(0.5f, 2.0f);
+	float z = dist(rd);
+	pl.position = { x,y,z };
+	dist = uniform_real_distribution<float>(0.1f, 0.4f);
+	float ambient_v = dist(rd);
+	pl.ambient = { ambient_v,ambient_v, ambient_v };
+	dist = uniform_real_distribution<float>(0.4f, 0.7f);
+	float diffuse_v = dist(rd);
+	pl.diffuse = { diffuse_v, diffuse_v,diffuse_v };
+	dist = uniform_real_distribution<float>(0.5f, 1.0f);
+	float specular_v = dist(rd);
+	pl.specular = { specular_v,specular_v, specular_v };
 	pl._near = 0.5f;
 	pl._far = 10.0f;
 
@@ -118,6 +137,7 @@ void GlApp::renderOnce(std::string img_path)
 	m_text_shader->setFloat("point_light.far", pl._far);
 
 	m_text_shader->setVec3("obj_color", { 1.0f,0.0f,0.0f });
+
 	m_text_shader->setBool("is_light", false);
 	m_text_shader->setVec3("view_pos", { 0.0f,0.0f,1.0f });
 
@@ -125,17 +145,25 @@ void GlApp::renderOnce(std::string img_path)
 	m_quad_shader->setInt("screen_texture", m_texture_colorbuffer);
 
 	drawFbo();
-	fboToFile("test.jpg");
-	glDeleteTextures(1, &texture_id);
+		
 }
 
-int GlApp::DebugRenderLoop()
+void GlApp::deleteTexture()
 {
+	glDeleteTextures(1, &m_texture_id);
+}
+
+int GlApp::DebugRenderLoop(std::string img_path)
+{
+	glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+	generateTexture("../img/1.jpg");
 	while (!glfwWindowShouldClose(m_window)) {
+		renderOnce();
 		drawQuad();
 		glfwSwapBuffers(m_window);
 		glfwPollEvents();
 	}
+	deleteTexture();
 	return 0;
 }
 
@@ -168,6 +196,26 @@ void GlApp::generateFrameBuffer()
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GlApp::run(std::string src_dir, std::string dest_dir, int num_for_each)
+{
+	fs::path path_dest_dir(dest_dir);
+	if (!fs::exists(path_dest_dir))
+		fs::create_directory(path_dest_dir);
+	cout << path_dest_dir.string() << endl;
+	for (auto& de : fs::directory_iterator(src_dir)) {
+		string file_path_str = de.path().string();
+		generateTexture(file_path_str);
+		string filename = de.path().filename().string();
+		for (int i = 0; i < num_for_each; ++i) {
+			renderOnce();
+			string dest_file_name = "light_" + to_string(i) + "_" + filename;
+			string dest_path_str = (path_dest_dir/dest_file_name).string();
+			fboToFile(dest_path_str);
+		}
+		deleteTexture();
+	}
 }
 
 

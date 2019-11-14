@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.757
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "text_lighting_cpp", "text_lighting_cpp.vcxproj", "{A1A4692E-9E63-4AD5-B27E-6B234A40B61C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "text_lighting_cpp", "text_lighting_cpp\text_lighting_cpp.vcxproj", "{A1A4692E-9E63-4AD5-B27E-6B234A40B61C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

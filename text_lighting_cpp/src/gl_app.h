@@ -29,24 +29,33 @@ public:
 
 	int setViewport(int width, int height);
 
-	void drawFbo();
-
-	void fboToFile(std::string path);
-
-	void drawQuad();
-
-	void renderOnce(std::string img_path);
-
 	//For debugging
-	int DebugRenderLoop();
+	int DebugRenderLoop(std::string img_path);
 
 	void generateFrameBuffer();
+
+	void run(std::string src_dir, std::string dest_dir, int num_for_each);
 
 private:
 	int initGlfw();
 
 	int initGlad();
 
+	void generateTexture(std::string img_path);
+
+	void drawFbo();
+
+	void fboToFile(std::string path);
+
+	void drawQuad();
+
+	// 将当前的纹理绘制一次到fbo
+	void renderOnce();
+
+	void deleteTexture();
+
 	//For debugging
 	GLFWwindow* m_window;
+
+	unsigned int m_texture_id;
 };
