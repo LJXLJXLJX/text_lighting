@@ -135,7 +135,7 @@ void main(){
 		vec3 norm = normalize(normal);
 		vec3 viewDir = normalize(view_pos - frag_pos);
 		vec3 result = vec3(0,0,0);
-		//result += CalcDirLight(directional_light, norm, viewDir);
+		result += CalcDirLight(directional_light, norm, viewDir);
 		result += CalcPointLight(point_light, norm, frag_pos, viewDir);    
 		//result += CalcSpotLight(flash_light, norm, frag_pos, viewDir);
 

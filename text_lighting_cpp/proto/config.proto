@@ -1,0 +1,17 @@
+syntax = "proto3";
+import "google/protobuf/any.proto";
+
+
+message pbVec3{
+    float x = 1;
+    float y = 1;
+    float z = 1;
+}
+
+message pbPointLight{
+    pbVec3 postion=1;
+    pbVec3 ambient=2;
+    
+    float _near = ;
+    float _far = ;
+}

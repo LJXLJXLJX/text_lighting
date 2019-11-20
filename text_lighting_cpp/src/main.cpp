@@ -10,7 +10,8 @@ using namespace std;
 int main()
 {
 	shared_ptr<GlApp> app = make_shared<GlApp>();
-	app->createWindow(280, 32, "test");
+	app->createWindow(280, 280, "test");
+	app->setViewport(280, 280);
 	app->generateFrameBuffer();
 
 	app->m_text_shader->initFromFile("../shaders/vs.glsl", "../shaders/fs_light.glsl");
@@ -22,7 +23,7 @@ int main()
 	//app->renderOnce("../img/1.jpg");
 
 
-	//app->DebugRenderLoop("../img/1.jpg");
-	app->run("../img", "../output", 1);
+	app->DebugRenderLoop("../img/1.jpg");
+	//app->run("../img", "../output", 1);
 	return 0;
 }

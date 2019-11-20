@@ -63,7 +63,6 @@ void GlApp::generateTexture(std::string img_path)
 {
 	int height, width;
 	m_texture_id = textureFromFile(img_path.c_str(), height, width);
-	setViewport(width, height);
 }
 
 int GlApp::setViewport(int width, int height)
@@ -84,7 +83,7 @@ void GlApp::drawFbo()
 void GlApp::fboToFile(std::string path)
 {
 	GLubyte* pixels = (GLubyte*)malloc(280 * 32 * 3 * sizeof(GLubyte));
-	glReadPixels(0, 0, 280, 32, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+	glReadPixels(0, 125, 280, 32, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
 	stbi_flip_vertically_on_write(true);
 	stbi_write_jpg(path.c_str(), 280, 32, 3, pixels, 100);
@@ -109,43 +108,95 @@ void GlApp::renderOnce()
 	m_text_shader->setFloat("material.shininess", 32.0f);
 
 	PointLight pl;
+	DirectionalLight dl;
 
 	random_device rd{};
+
+	// 此宏定义单纯只是为了提高可读性
+#define POINT_LIGHT
+#ifdef POINT_LIGHT
+	// light pos
+	//-----------------------------------------------------
 	uniform_real_distribution<float> dist(-2.0f, 2.0f);
 	float x = dist(rd);
+	dist = uniform_real_distribution<float>(-1.0f, 1.0f);
 	float y = dist(rd);
-	dist = uniform_real_distribution<float>(0.5f, 2.0f);
+	dist = uniform_real_distribution<float>(1.5f, 5.0f);
 	float z = dist(rd);
 	pl.position = { x,y,z };
-	dist = uniform_real_distribution<float>(0.1f, 0.4f);
+	m_text_shader->setVec3("point_light.position", pl.position);
+	// ambient
+	//-----------------------------------------------------
+	dist = uniform_real_distribution<float>(0.05f, 0.2f);
 	float ambient_v = dist(rd);
 	pl.ambient = { ambient_v,ambient_v, ambient_v };
-	dist = uniform_real_distribution<float>(0.4f, 0.7f);
+	m_text_shader->setVec3("point_light.ambient", pl.ambient);
+	// diffuse
+	//-----------------------------------------------------
+	dist = uniform_real_distribution<float>(0.1f, 0.35f);
 	float diffuse_v = dist(rd);
-	pl.diffuse = { diffuse_v, diffuse_v,diffuse_v };
+	pl.diffuse = { diffuse_v,diffuse_v,diffuse_v };
+	m_text_shader->setVec3("point_light.diffuse", pl.diffuse);
+	// specular
+	//-----------------------------------------------------
 	dist = uniform_real_distribution<float>(0.5f, 1.0f);
 	float specular_v = dist(rd);
-	pl.specular = { specular_v,specular_v, specular_v };
-	pl._near = 0.5f;
-	pl._far = 10.0f;
-
-	m_text_shader->setVec3("point_light.position", pl.position);
-	m_text_shader->setVec3("point_light.ambient", pl.ambient);
-	m_text_shader->setVec3("point_light.diffuse", pl.diffuse);
+	pl.specular = { specular_v,specular_v,specular_v };
 	m_text_shader->setVec3("point_light.specular", pl.specular);
+
+	pl._near = 0.5f;
+	pl._far = 50.0f;
 	m_text_shader->setFloat("point_light.near", pl._near);
 	m_text_shader->setFloat("point_light.far", pl._far);
+#endif
 
+#define DIRECTIONAL_LIGHT
+#ifdef DIRECTIONAL_LIGHT
+	// direction
+	//-----------------------------------------------------
+	dist = uniform_real_distribution<float>(-1.0f, 1.0f);
+	x = dist(rd);
+	y = dist(rd);
+	z = -1.0f;
+	dl.direction = { x,y,z };
+	m_text_shader->setVec3("directional_light.direction",dl.direction);
+	// ambient
+	//-----------------------------------------------------
+	dist = uniform_real_distribution<float>(0.05f, 0.2f);
+	ambient_v = dist(rd);
+	dl.ambient = { ambient_v,ambient_v, ambient_v };
+	m_text_shader->setVec3("directional_light.ambient", dl.ambient);
+	// diffuse
+	//-----------------------------------------------------
+	dist = uniform_real_distribution<float>(0.2f, 0.35f);
+	diffuse_v = dist(rd);
+	dl.diffuse = { diffuse_v,diffuse_v,diffuse_v };
+	m_text_shader->setVec3("directional_light.diffuse", dl.diffuse);
+	// specular
+	//-----------------------------------------------------
+	dist = uniform_real_distribution<float>(0.5f, 1.0f);
+	specular_v = dist(rd);
+	dl.specular = { specular_v,specular_v,specular_v };
+	m_text_shader->setVec3("directional_light.specular", dl.specular);
+#endif
+
+	// view pos
+	//-----------------------------------------------------
+	dist = uniform_real_distribution<float>(-0.5f, 0.5f);
+	x = dist(rd);
+	dist = uniform_real_distribution<float>(-0.05f, 0.05f);
+	y = dist(rd);
+	dist = uniform_real_distribution<float>(-0.1f, 1.0f);
+	z = dist(rd);
+	m_text_shader->setVec3("view_pos", { x,y,z });
+
+	
 	m_text_shader->setVec3("obj_color", { 1.0f,0.0f,0.0f });
-
 	m_text_shader->setBool("is_light", false);
-	m_text_shader->setVec3("view_pos", { 0.0f,0.0f,1.0f });
 
 	m_qm->setTexture(m_quad_shader, m_texture_colorbuffer);
 	m_quad_shader->setInt("screen_texture", m_texture_colorbuffer);
-
 	drawFbo();
-		
 }
 
 void GlApp::deleteTexture()
@@ -155,7 +206,7 @@ void GlApp::deleteTexture()
 
 int GlApp::DebugRenderLoop(std::string img_path)
 {
-	glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+	glfwShowWindow(m_window);
 	generateTexture("../img/1.jpg");
 	while (!glfwWindowShouldClose(m_window)) {
 		renderOnce();
@@ -175,7 +226,7 @@ void GlApp::generateFrameBuffer()
 	// 生成纹理
 	glGenTextures(1, &m_texture_colorbuffer);
 	glBindTexture(GL_TEXTURE_2D, m_texture_colorbuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 280, 32, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 280, 280, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -188,7 +239,7 @@ void GlApp::generateFrameBuffer()
 	unsigned int rbo;
 	glGenRenderbuffers(1, &rbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 280, 32);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 280, 280);
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
@@ -211,11 +262,10 @@ void GlApp::run(std::string src_dir, std::string dest_dir, int num_for_each)
 		for (int i = 0; i < num_for_each; ++i) {
 			renderOnce();
 			string dest_file_name = "light_" + to_string(i) + "_" + filename;
-			string dest_path_str = (path_dest_dir/dest_file_name).string();
+			string dest_path_str = (path_dest_dir / dest_file_name).string();
 			fboToFile(dest_path_str);
 		}
 		deleteTexture();
 	}
 }
-
 
