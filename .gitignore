@@ -4,6 +4,7 @@
 /**/x64/
 __pycache__/
 *.pyc
-
-
-
+/**/img/
+/**/output/
+*.rar
+*.zip

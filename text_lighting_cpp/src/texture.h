@@ -1,5 +1,9 @@
 #pragma once
 #include "stb_image.h"
 #include <glad/glad.h>
+#include <iostream>
 
-unsigned int textureFromFile(const char* img_file,int& height,int& width);
+
+unsigned char* rawGray2RGB(unsigned char* data, unsigned int size);
+
+unsigned int textureFromFile(const char* img_file);

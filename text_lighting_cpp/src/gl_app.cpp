@@ -61,8 +61,7 @@ int GlApp::initGlad()
 
 void GlApp::generateTexture(std::string img_path)
 {
-	int height, width;
-	m_texture_id = textureFromFile(img_path.c_str(), height, width);
+	m_texture_id = textureFromFile(img_path.c_str());
 }
 
 int GlApp::setViewport(int width, int height)
@@ -87,6 +86,7 @@ void GlApp::fboToFile(std::string path)
 
 	stbi_flip_vertically_on_write(true);
 	stbi_write_jpg(path.c_str(), 280, 32, 3, pixels, 100);
+	free(pixels);
 }
 
 void GlApp::drawQuad()
@@ -207,7 +207,7 @@ void GlApp::deleteTexture()
 int GlApp::DebugRenderLoop(std::string img_path)
 {
 	glfwShowWindow(m_window);
-	generateTexture("../img/1.jpg");
+	generateTexture(img_path);
 	while (!glfwWindowShouldClose(m_window)) {
 		renderOnce();
 		drawQuad();
@@ -254,7 +254,7 @@ void GlApp::run(std::string src_dir, std::string dest_dir, int num_for_each)
 	fs::path path_dest_dir(dest_dir);
 	if (!fs::exists(path_dest_dir))
 		fs::create_directory(path_dest_dir);
-	cout << path_dest_dir.string() << endl;
+	int count = 0;
 	for (auto& de : fs::directory_iterator(src_dir)) {
 		string file_path_str = de.path().string();
 		generateTexture(file_path_str);
@@ -264,6 +264,10 @@ void GlApp::run(std::string src_dir, std::string dest_dir, int num_for_each)
 			string dest_file_name = "light_" + to_string(i) + "_" + filename;
 			string dest_path_str = (path_dest_dir / dest_file_name).string();
 			fboToFile(dest_path_str);
+			count++;
+			cout << "光照处理中:" << count;
+			Sleep(1);
+			cout << "\r";
 		}
 		deleteTexture();
 	}
